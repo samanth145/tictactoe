@@ -1,0 +1,181 @@
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Scanner;
+
+/* --------------------------------------------------------
+ ABSTRACT CLASS
+ --------------------------------------------------------*/
+abstract class Game {
+    protected char[][] board;
+    protected char currentPlayer;
+
+    public abstract void play();
+    public abstract boolean checkWinner();
+    public abstract void printBoard();
+}
+
+/* --------------------------------------------------------
+ INHERITANCE + POLYMORPHISM
+ --------------------------------------------------------*/
+class TicTacToe extends Game {
+
+    private ArrayList<String> moveHistory = new ArrayList<>();
+
+    public TicTacToe() {
+        board = new char[3][3];
+        currentPlayer = 'X';
+        initializeBoard();
+    }
+
+    private void initializeBoard() {
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+                board[i][j] = '-';
+    }
+
+    /* --------------------------------------------------------
+     GAME LOOP - NOW USES POSITION 1-9
+     --------------------------------------------------------*/
+    @Override
+    public void play() {
+        Scanner sc = new Scanner(System.in);
+
+        while (true) {
+            printBoard();
+            System.out.println("Player " + currentPlayer + ", enter a position (1-9): ");
+
+            try {
+                int pos = sc.nextInt();
+
+                if (!isValidMove(pos)) {
+                    System.out.println("Invalid move! Try again.");
+                    continue;
+                }
+
+                // Convert 1-9 input into row & column
+                int row = (pos - 1) / 3;
+                int col = (pos - 1) % 3;
+
+                board[row][col] = currentPlayer;
+                moveHistory.add("Player " + currentPlayer + " -> Position " + pos);
+
+                if (checkWinner()) {
+                    printBoard();
+                    System.out.println("🎉 Player " + currentPlayer + " wins!");
+                    saveResult("Player " + currentPlayer + " wins!");
+                    break;
+                }
+
+                if (isBoardFull()) {
+                    printBoard();
+                    System.out.println("It's a draw!");
+                    saveResult("Game ended in a Draw");
+                    break;
+                }
+
+                switchPlayer();
+
+            } catch (Exception e) {
+                System.out.println("Invalid input! Enter a number between 1–9.");
+                sc.nextLine();
+            }
+        }
+    }
+
+    /* --------------------------------------------------------
+     CHECK IF POSITION IS VALID
+     --------------------------------------------------------*/
+    private boolean isValidMove(int pos) {
+        if (pos < 1 || pos > 9) return false;
+        int row = (pos - 1) / 3;
+        int col = (pos - 1) % 3;
+        return board[row][col] == '-';
+    }
+
+    /* --------------------------------------------------------
+     WIN CHECK
+     --------------------------------------------------------*/
+    @Override
+    public boolean checkWinner() {
+        for (int i = 0; i < 3; i++) {
+            if (board[i][0] == currentPlayer &&
+                    board[i][1] == currentPlayer &&
+                    board[i][2] == currentPlayer)
+                return true;
+
+            if (board[0][i] == currentPlayer &&
+                    board[1][i] == currentPlayer &&
+                    board[2][i] == currentPlayer)
+                return true;
+        }
+
+        return (board[0][0] == currentPlayer &&
+                board[1][1] == currentPlayer &&
+                board[2][2] == currentPlayer) ||
+                (board[0][2] == currentPlayer &&
+                        board[1][1] == currentPlayer &&
+                        board[2][0] == currentPlayer);
+    }
+
+    private boolean isBoardFull() {
+        for (char[] row : board)
+            for (char c : row)
+                if (c == '-') return false;
+        return true;
+    }
+
+    private void switchPlayer() {
+        currentPlayer = (currentPlayer == 'X') ? 'O' : 'X';
+    }
+
+    /* --------------------------------------------------------
+     FILE I/O
+     --------------------------------------------------------*/
+    private void saveResult(String result) {
+        try (FileWriter fw = new FileWriter("tictactoe_result.txt")) {
+            fw.write("TIC TAC TOE GAME RESULT\n");
+            fw.write("------------------------\n");
+            fw.write(result + "\n\n");
+            fw.write("Move History:\n");
+
+            for (String move : moveHistory) {
+                fw.write(move + "\n");
+            }
+
+            System.out.println("Game result saved to tictactoe_result.txt");
+
+        } catch (IOException e) {
+            System.out.println("Error saving the result!");
+        }
+    }
+
+    /* --------------------------------------------------------
+     PRINT BOARD (Shows positions)
+     --------------------------------------------------------*/
+    @Override
+    public void printBoard() {
+        System.out.println("\nCurrent Board:");
+
+        int pos = 1;
+
+        for (char[] row : board) {
+            for (char c : row) {
+                if (c == '-') System.out.print(pos + " ");
+                else System.out.print(c + " ");
+                pos++;
+            }
+            System.out.println();
+        }
+    }
+}
+
+/* --------------------------------------------------------
+ MAIN CLASS
+ --------------------------------------------------------*/
+public class Main {
+    public static void main(String[] args) {
+        Game game = new TicTacToe();
+        game.play();
+    }
+}
