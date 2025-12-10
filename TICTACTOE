@@ -1,0 +1,118 @@
+import javax.swing.*;
+import java.awt.*;
+
+class TTT1 extends JFrame {
+    JButton[] b = new JButton[9];
+    char[] board = new char[9];
+    char turn;
+    JLabel info, px, po, pd;
+
+    public TTT1() {
+        setTitle("Tic Tac Toe");
+        setSize(300, 400);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        info = new JLabel("", SwingConstants.CENTER);
+        add(info, BorderLayout.NORTH);
+
+        JPanel grid = new JPanel(new GridLayout(3, 3));
+        for (int i = 0; i < 9; i++) {
+            b[i] = new JButton("");
+            b[i].setFont(new Font("", Font.BOLD, 28));
+            b[i].setFocusPainted(false);   // no focus highlight
+            b[i].setFocusable(false);      // no focus border on click
+            int idx = i;
+            b[i].addActionListener(e -> click(idx));
+            grid.add(b[i]);
+        }
+        add(grid, BorderLayout.CENTER);
+
+        JPanel p = new JPanel(new GridLayout(4, 1));
+        px = new JLabel("X: -");
+        po = new JLabel("O: -");
+        pd = new JLabel("Draw: -");
+        JButton ng = new JButton("New Game");
+        ng.addActionListener(e -> newGame());
+        p.add(px);
+        p.add(po);
+        p.add(pd);
+        p.add(ng);
+        add(p, BorderLayout.SOUTH);
+
+        newGame();
+        setVisible(true);
+    }
+
+    void newGame() {
+        for (int i = 0; i < 9; i++) {
+            board[i] = ' ';
+            b[i].setText("");
+            b[i].setEnabled(true);
+        }
+        String s = JOptionPane.showInputDialog(this, "Who starts? (X/O)");
+        turn = (s != null && s.equalsIgnoreCase("O")) ? 'O' : 'X';
+        info.setText("Turn: " + turn);
+        updateProb();
+    }
+
+    void click(int i) {
+        if (board[i] != ' ') return;
+        board[i] = turn;
+        b[i].setText("" + turn);
+        b[i].setEnabled(false);
+
+        char w = win(board);
+        if (w != ' ') {
+            info.setText(w == 'D' ? "Draw!" : "Winner: " + w);
+            JOptionPane.showMessageDialog(this, info.getText());
+            for (JButton x : b) x.setEnabled(false);
+            return;
+        }
+        turn = (turn == 'X') ? 'O' : 'X';
+        info.setText("Turn: " + turn);
+        updateProb();
+    }
+
+    void updateProb() {
+        double[] p = prob(board.clone(), turn);
+        px.setText(String.format("X: %.1f%%", p[0] * 100));
+        po.setText(String.format("O: %.1f%%", p[1] * 100));
+        pd.setText(String.format("Draw: %.1f%%", p[2] * 100));
+    }
+
+    static char win(char[] s) {
+        int[][] w = {
+                {0,1,2},{3,4,5},{6,7,8},
+                {0,3,6},{1,4,7},{2,5,8},
+                {0,4,8},{2,4,6}
+        };
+        for (int[] x : w)
+            if (s[x[0]] != ' ' && s[x[0]] == s[x[1]] && s[x[1]] == s[x[2]])
+                return s[x[0]];
+        for (char c : s) if (c == ' ') return ' ';
+        return 'D';
+    }
+
+    static double[] prob(char[] s, char t) {
+        char w = win(s);
+        if (w == 'X') return new double[]{1,0,0};
+        if (w == 'O') return new double[]{0,1,0};
+        if (w == 'D') return new double[]{0,0,1};
+
+        double x = 0, o = 0, d = 0;
+        int m = 0;
+        for (int i = 0; i < 9; i++) if (s[i] == ' ') {
+            s[i] = t;
+            double[] r = prob(s, t == 'X' ? 'O' : 'X');
+            x += r[0]; o += r[1]; d += r[2];
+            s[i] = ' ';
+            m++;
+        }
+        return new double[]{x / m, o / m, d / m};
+    }
+
+    public static void main(String[] args) {
+        new TTT1();
+    }
+}
